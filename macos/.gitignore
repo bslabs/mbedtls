@@ -1,0 +1,8 @@
+*.SYM
+*.xSYM
+mbedtls Data
+
+benchmark PPC
+benchmark 68K
+selftest PPC
+selftest 68K
