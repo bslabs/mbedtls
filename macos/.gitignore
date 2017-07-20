@@ -2,7 +2,9 @@
 *.xSYM
 mbedtls Data
 
+benchmark Carbon
 benchmark PPC
 benchmark 68K
+selftest Carbon
 selftest PPC
 selftest 68K
