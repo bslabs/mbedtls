@@ -34,7 +34,11 @@ static void atexit_func( void )
     RmvTime( (QElemPtr)&(tmTask.task) );
 }
 
+#if GENERATINGCFM
 static pascal void timerProc( TMTaskPtr tmTaskPtr )
+#else
+static pascal void timerProc( TMTaskPtr tmTaskPtr : __A1 )
+#endif
 {
     struct myTMTaskStruct *myTMTask = (struct myTMTaskStruct *)tmTaskPtr;
     *(myTMTask->timing_alarmed) = 1;
