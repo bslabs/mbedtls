@@ -837,7 +837,9 @@
  *
  * Requires: MBEDTLS_BIGNUM_C
  */
-#define MBEDTLS_GENPRIME
+// Currently broken when built with CodeWarrior. In mbedtls_rsa_gen_key(), mbedtls_mpi_bitlen()
+// returns nbits-1 rather than nbits, resulting in an infinite loop.
+//#define MBEDTLS_GENPRIME
 
 /**
  * \def MBEDTLS_FS_IO
