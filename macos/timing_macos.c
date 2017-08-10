@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 
+#include <Gestalt.h>
 #include <Timer.h>
 
 volatile int mbedtls_timing_alarmed;
@@ -51,11 +52,51 @@ static pascal void timerProc( TMTaskPtr tmTaskPtr )
  *                 In particular, it is known to be unreliable on virtual
  *                 machines.
  */
+#ifdef __MWERKS__
+// Metrowerks CodeWarrior building for Macintosh PowerPC/68K
+
+#if TARGET_CPU_PPC == 1
 unsigned long mbedtls_timing_hardclock( void )
 {
-    // TODO: implement
-    return 0;
+    static long cpuType = -1;
+    register unsigned long result;
+
+    if( cpuType == -1 )
+        Gestalt( gestaltNativeCPUtype, &cpuType );
+
+    if( cpuType != gestaltCPU601 )
+    {
+        // PPC 603 and above
+        // Use the lower 32-bits of the time base register
+        asm
+        {
+            mftb result
+        }
+    }
+    else
+    {
+        // PPC 601 doesn't implement mftb, use the RTCL SPR (5) instead
+        // (real-time clock measured in nanoseconds)
+        asm
+        {
+            mfspr result,5
+        }
+    }
+    return result;
 }
+#endif // TARGET_CPU_PPC
+
+#if TARGET_CPU_68K == 1
+unsigned long mbedtls_timing_hardclock( void )
+{
+    // 68K doesn't have any time base/cycle counter, use the system timer (microseconds since boot)
+    UnsignedWide usec;
+    Microseconds(&usec);
+    return usec.lo;
+}
+#endif
+
+#endif // __MWERKS__
 
 /**
  * \brief          Return the elapsed time in milliseconds
