@@ -69,9 +69,11 @@
 #if defined(MBEDTLS_FS_IO)
 #include <stdio.h>
 #if !defined(_WIN32) || defined(EFIX64) || defined(EFI32)
+#if macintosh == 0
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#endif /* macintosh == 0 */
 #endif /* !_WIN32 || EFIX64 || EFI32 */
 #endif
 
@@ -1164,6 +1166,8 @@ int mbedtls_x509_crt_parse_path( mbedtls_x509_crt *chain, const char *path )
 
 cleanup:
     FindClose( hFind );
+#elif macintosh == 1
+    return MBEDTLS_ERR_X509_FILE_IO_ERROR;
 #else /* _WIN32 */
     int t_ret;
     int snp_ret;
