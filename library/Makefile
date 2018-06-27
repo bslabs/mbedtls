@@ -31,9 +31,9 @@ LOCAL_CFLAGS += -fPIC -fpic
 endif
 endif
 
-SOEXT_TLS=so.10
+SOEXT_TLS=so.11
 SOEXT_X509=so.0
-SOEXT_CRYPTO=so.2
+SOEXT_CRYPTO=so.3
 
 # Set DLEXT=dylib to compile as a shared library for Mac OS X
 DLEXT ?= so
@@ -50,22 +50,25 @@ endif
 OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		asn1parse.o	asn1write.o	base64.o	\
 		bignum.o	blowfish.o	camellia.o	\
+		aria.o						\
 		ccm.o		cipher.o	cipher_wrap.o	\
 		cmac.o		ctr_drbg.o	des.o		\
 		dhm.o		ecdh.o		ecdsa.o		\
 		ecjpake.o	ecp.o				\
 		ecp_curves.o	entropy.o	entropy_poll.o	\
 		error.o		gcm.o		havege.o	\
+		hkdf.o						\
 		hmac_drbg.o	md.o		md2.o		\
 		md4.o		md5.o		md_wrap.o	\
 		memory_buffer_alloc.o		oid.o		\
 		padlock.o	pem.o		pk.o		\
 		pk_wrap.o	pkcs12.o	pkcs5.o		\
 		pkparse.o	pkwrite.o	platform.o	\
-		ripemd160.o	rsa_internal.o	rsa.o  		\
-		sha1.o		sha256.o	sha512.o	\
-		threading.o	timing.o	version.o	\
-		version_features.o		xtea.o
+		platform_util.o	ripemd160.o	rsa_internal.o	\
+		rsa.o 		sha1.o		sha256.o	\
+		sha512.o	threading.o	timing.o	\
+		version.o	version_features.o		\
+		xtea.o
 
 OBJS_X509=	certs.o		pkcs11.o	x509.o		\
 		x509_create.o	x509_crl.o	x509_crt.o	\
