@@ -62,7 +62,7 @@
 #endif
 
 #if defined(MBEDTLS_HAVE_TIME)
-#include "mbedtls/platform_time.h"
+#include "platform_time.h"
 #endif
 
 /*
@@ -220,7 +220,7 @@
 #endif
 
 /*
- * Maxium fragment length in bytes,
+ * Maximum fragment length in bytes,
  * determines the size of each of the two internal I/O buffers.
  *
  * Note: the RFC defines the default size of SSL / TLS messages. If you
@@ -232,6 +232,14 @@
  */
 #if !defined(MBEDTLS_SSL_MAX_CONTENT_LEN)
 #define MBEDTLS_SSL_MAX_CONTENT_LEN         16384   /**< Size of the input / output buffer */
+#endif
+
+#if !defined(MBEDTLS_SSL_IN_CONTENT_LEN)
+#define MBEDTLS_SSL_IN_CONTENT_LEN MBEDTLS_SSL_MAX_CONTENT_LEN
+#endif
+
+#if !defined(MBEDTLS_SSL_OUT_CONTENT_LEN)
+#define MBEDTLS_SSL_OUT_CONTENT_LEN MBEDTLS_SSL_MAX_CONTENT_LEN
 #endif
 
 /* \} name SECTION: Module settings */
@@ -2418,7 +2426,8 @@ void mbedtls_ssl_conf_cert_req_ca_list( mbedtls_ssl_config *conf,
 #if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
 /**
  * \brief          Set the maximum fragment length to emit and/or negotiate
- *                 (Default: MBEDTLS_SSL_MAX_CONTENT_LEN, usually 2^14 bytes)
+ *                 (Default: the smaller of MBEDTLS_SSL_IN_CONTENT_LEN and
+ *                 MBEDTLS_SSL_OUT_CONTENT_LEN, usually 2^14 bytes)
  *                 (Server: set maximum fragment length to emit,
  *                 usually negotiated by the client during handshake
  *                 (Client: set maximum fragment length to emit *and*
@@ -2737,7 +2746,6 @@ const mbedtls_x509_crt *mbedtls_ssl_get_peer_cert( const mbedtls_ssl_context *ss
  * \brief          Save session in order to resume it later (client-side only)
  *                 Session data is copied to presented session structure.
  *
- * \warning        Currently, peer certificate is lost in the operation.
  *
  * \param ssl      SSL context
  * \param session  session context
@@ -2745,7 +2753,18 @@ const mbedtls_x509_crt *mbedtls_ssl_get_peer_cert( const mbedtls_ssl_context *ss
  * \return         0 if successful,
  *                 MBEDTLS_ERR_SSL_ALLOC_FAILED if memory allocation failed,
  *                 MBEDTLS_ERR_SSL_BAD_INPUT_DATA if used server-side or
- *                 arguments are otherwise invalid
+ *                 arguments are otherwise invalid.
+ *
+ * \note           Only the server certificate is copied, and not the full chain,
+ *                 so you should not attempt to validate the certificate again
+ *                 by calling \c mbedtls_x509_crt_verify() on it.
+ *                 Instead, you should use the results from the verification
+ *                 in the original handshake by calling \c mbedtls_ssl_get_verify_result()
+ *                 after loading the session again into a new SSL context
+ *                 using \c mbedtls_ssl_set_session().
+ *
+ * \note           Once the session object is not needed anymore, you should
+ *                 free it by calling \c mbedtls_ssl_session_free().
  *
  * \sa             mbedtls_ssl_set_session()
  */
@@ -2907,17 +2926,19 @@ int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len )
  *                 or MBEDTLS_ERR_SSL_WANT_WRITE or MBEDTLS_ERR_SSL_WANT_READ,
  *                 or another negative error code.
  *
- * \note           If this function returns something other than a positive value
- *                 or MBEDTLS_ERR_SSL_WANT_READ/WRITE, you must stop using
- *                 the SSL context for reading or writing, and either free it or
- *                 call \c mbedtls_ssl_session_reset() on it before re-using it
- *                 for a new connection; the current connection must be closed.
+ * \note           If this function returns something other than 0, a positive
+ *                 value or MBEDTLS_ERR_SSL_WANT_READ/WRITE, you must stop
+ *                 using the SSL context for reading or writing, and either
+ *                 free it or call \c mbedtls_ssl_session_reset() on it before
+ *                 re-using it for a new connection; the current connection
+ *                 must be closed.
  *
  * \note           When this function returns MBEDTLS_ERR_SSL_WANT_WRITE/READ,
  *                 it must be called later with the *same* arguments,
- *                 until it returns a positive value. When the function returns
- *                 MBEDTLS_ERR_SSL_WANT_WRITE there may be some partial
- *                 data in the output buffer, however this is not yet sent.
+ *                 until it returns a value greater that or equal to 0. When
+ *                 the function returns MBEDTLS_ERR_SSL_WANT_WRITE there may be
+ *                 some partial data in the output buffer, however this is not
+ *                 yet sent.
  *
  * \note           If the requested length is greater than the maximum
  *                 fragment length (either the built-in limit or the one set
@@ -2926,6 +2947,9 @@ int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len )
  *                 - with DTLS, MBEDTLS_ERR_SSL_BAD_INPUT_DATA is returned.
  *                 \c mbedtls_ssl_get_max_frag_len() may be used to query the
  *                 active maximum fragment length.
+ *
+ * \note           Attempting to write 0 bytes will result in an empty TLS
+ *                 application record being sent.
  */
 int mbedtls_ssl_write( mbedtls_ssl_context *ssl, const unsigned char *buf, size_t len );
 
@@ -3017,6 +3041,9 @@ void mbedtls_ssl_session_init( mbedtls_ssl_session *session );
 /**
  * \brief          Free referenced items in an SSL session including the
  *                 peer certificate and clear memory
+ *
+ * \note           A session object can be freed even if the SSL context
+ *                 that was used to retrieve the session is still in use.
  *
  * \param session  SSL session
  */
