@@ -2681,6 +2681,13 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
+/*
+ * Commit 512b4ee9c7421c4d (new in 2.12.0) uses gmtime_r() in library/x509.c,
+ * which CodeWarrior Pro 8 lacks.
+ * #define to gmtime(), we don't care about thread safety.
+ */
+#define gmtime_r(a, b) gmtime(a)
+
 #include "check_config.h"
 
 #endif /* MBEDTLS_CONFIG_H */
