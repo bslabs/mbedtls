@@ -3280,6 +3280,9 @@
  */
 //#define MBEDTLS_PLATFORM_GMTIME_R_ALT
 
+// Specify byte order to work around bignum.c bugs on big-endian (see upstream issue #2622)
+#define __BYTE_ORDER__ __ORDER_BIG_ENDIAN__
+
 /* \} name SECTION: Customisation configuration options */
 
 /* Target and application specific configurations
