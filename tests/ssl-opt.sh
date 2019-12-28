@@ -553,6 +553,20 @@ run_test() {
     CLI_EXPECT="$3"
     shift 3
 
+    # Check if test uses files
+    TEST_USES_FILES=$(echo "$SRV_CMD $CLI_CMD" | grep "\.\(key\|crt\|pem\)" )
+    if [ ! -z "$TEST_USES_FILES" ]; then
+       requires_config_enabled MBEDTLS_FS_IO
+    fi
+
+    # should we skip?
+    if [ "X$SKIP_NEXT" = "XYES" ]; then
+        SKIP_NEXT="NO"
+        echo "SKIP"
+        SKIPS=$(( $SKIPS + 1 ))
+        return
+    fi
+
     # fix client port
     if [ -n "$PXY_CMD" ]; then
         CLI_CMD=$( echo "$CLI_CMD" | sed s/+SRV_PORT/$PXY_PORT/g )
@@ -4032,7 +4046,7 @@ run_test    "Per-version suites: TLS 1.2" \
 
 requires_gnutls
 run_test    "ClientHello without extensions, SHA-1 allowed" \
-            "$P_SRV debug_level=3" \
+            "$P_SRV debug_level=3 key_file=data_files/server2.key crt_file=data_files/server2.crt" \
             "$G_CLI --priority=NORMAL:%NO_EXTENSIONS:%DISABLE_SAFE_RENEGOTIATION localhost" \
             0 \
             -s "dumping 'client hello extensions' (0 bytes)"

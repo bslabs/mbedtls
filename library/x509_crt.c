@@ -395,7 +395,7 @@ static int x509_get_version( unsigned char **p,
             return( 0 );
         }
 
-        return( ret );
+        return( MBEDTLS_ERR_X509_INVALID_FORMAT + ret );
     }
 
     end = *p + len;
@@ -462,7 +462,7 @@ static int x509_get_uid( unsigned char **p,
         if( ret == MBEDTLS_ERR_ASN1_UNEXPECTED_TAG )
             return( 0 );
 
-        return( ret );
+        return( MBEDTLS_ERR_X509_INVALID_FORMAT + ret );
     }
 
     uid->p = *p;
@@ -701,14 +701,13 @@ static int x509_get_crt_ext( unsigned char **p,
     size_t len;
     unsigned char *end_ext_data, *end_ext_octet;
 
+    if( *p == end )
+        return( 0 );
+
     if( ( ret = mbedtls_x509_get_ext( p, end, &crt->v3_ext, 3 ) ) != 0 )
-    {
-        if( ret == MBEDTLS_ERR_ASN1_UNEXPECTED_TAG )
-            return( 0 );
-
         return( ret );
-    }
 
+    end = crt->v3_ext.p + crt->v3_ext.len;
     while( *p < end )
     {
         /*
@@ -1443,7 +1442,7 @@ static int x509_info_subject_alt_name( char **buf, size_t *size,
     }
 
 #define CERT_TYPE(type,name)                    \
-    if( ns_cert_type & type )                   \
+    if( ns_cert_type & (type) )                 \
         PRINT_ITEM( name );
 
 static int x509_info_cert_type( char **buf, size_t *size,
@@ -1470,7 +1469,7 @@ static int x509_info_cert_type( char **buf, size_t *size,
 }
 
 #define KEY_USAGE(code,name)    \
-    if( key_usage & code )      \
+    if( key_usage & (code) )    \
         PRINT_ITEM( name );
 
 static int x509_info_key_usage( char **buf, size_t *size,
