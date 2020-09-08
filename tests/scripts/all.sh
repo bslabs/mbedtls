@@ -185,6 +185,9 @@ pre_initialize_variables () {
         export MAKEFLAGS="-j"
     fi
 
+    # Include more verbose output for failing tests run by CMake
+    export CTEST_OUTPUT_ON_FAILURE=1
+
     # CFLAGS and LDFLAGS for Asan builds that don't use CMake
     ASAN_CFLAGS='-Werror -Wall -Wextra -fsanitize=address,undefined -fno-sanitize-recover=all'
 
@@ -1495,6 +1498,20 @@ component_test_no_64bit_multiplication () {
     make CFLAGS='-Werror -O1'
 
     msg "test: MBEDTLS_NO_64BIT_MULTIPLICATION native" # ~ 10s
+    make test
+}
+
+component_test_no_strings () {
+    msg "build: no strings" # ~10s
+    scripts/config.pl full
+    # Disable options that activate a large amount of string constants.
+    scripts/config.pl unset MBEDTLS_DEBUG_C
+    scripts/config.pl unset MBEDTLS_ERROR_C
+    scripts/config.pl set MBEDTLS_ERROR_STRERROR_DUMMY
+    scripts/config.pl unset MBEDTLS_VERSION_FEATURES
+    make CFLAGS='-Werror -Os'
+
+    msg "test: no strings" # ~ 10s
     make test
 }
 
