@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (c) 2014-2016, ARM Limited, All Rights Reserved
+# Copyright The Mbed TLS Contributors
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
 #
 # This file is provided under the Apache License 2.0, or the
@@ -41,8 +41,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # **********
-#
-# This file is part of Mbed TLS (https://tls.mbed.org)
 #
 # Purpose
 #
@@ -128,6 +126,8 @@ MBEDTLS_REMOVE_3DES_CIPHERSUITES
 MBEDTLS_REMOVE_ARC4_CIPHERSUITES
 MBEDTLS_RSA_NO_CRT
 MBEDTLS_SSL_HW_RECORD_ACCEL
+MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN
+MBEDTLS_TEST_CONSTANT_FLOW_VALGRIND
 MBEDTLS_TEST_NULL_ENTROPY
 MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
 MBEDTLS_ZLIB_SUPPORT

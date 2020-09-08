@@ -2,7 +2,7 @@
 
 # all.sh
 #
-# Copyright (c) 2014-2017, ARM Limited, All Rights Reserved
+# Copyright The Mbed TLS Contributors
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
 #
 # This file is provided under the Apache License 2.0, or the
@@ -43,8 +43,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # **********
-#
-# This file is part of Mbed TLS (https://tls.mbed.org)
 
 
 
@@ -664,8 +662,8 @@ component_check_doxy_blocks () {
 }
 
 component_check_files () {
-    msg "test: check-files.py" # < 1s
-    record_status tests/scripts/check-files.py
+    msg "Check: file sanity checks (permissions, encodings)" # < 1s
+    record_status tests/scripts/check_files.py
 }
 
 component_check_changelog () {
@@ -1031,6 +1029,46 @@ component_test_full_cmake_clang () {
     if_build_succeeded env OPENSSL_CMD="$OPENSSL_NEXT" tests/compat.sh -e '^$' -f 'ARIA\|CHACHA'
 }
 
+component_test_memsan_constant_flow () {
+    # This tests both (1) accesses to undefined memory, and (2) branches or
+    # memory access depending on secret values. To distinguish between those:
+    # - unset MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN - does the failure persist?
+    # - or alternatively, change the build type to MemSanDbg, which enables
+    # origin tracking and nicer stack traces (which are useful for debugging
+    # anyway), and check if the origin was TEST_CF_SECRET() or something else.
+    msg "build: cmake MSan (clang), full config with constant flow testing"
+    scripts/config.pl full
+    scripts/config.pl set MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN
+    scripts/config.pl unset MBEDTLS_AESNI_C # memsan doesn't grok asm
+    CC=clang cmake -D CMAKE_BUILD_TYPE:String=MemSan .
+    make
+
+    msg "test: main suites (Msan + constant flow)"
+    make test
+}
+
+component_test_valgrind_constant_flow () {
+    # This tests both (1) everything that valgrind's memcheck usually checks
+    # (heap buffer overflows, use of uninitialized memory, use-after-free,
+    # etc.) and (2) branches or memory access depending on secret values,
+    # which will be reported as uninitialized memory. To distinguish between
+    # secret and actually uninitialized:
+    # - unset MBEDTLS_TEST_CONSTANT_FLOW_VALGRIND - does the failure persist?
+    # - or alternatively, build with debug info and manually run the offending
+    # test suite with valgrind --track-origins=yes, then check if the origin
+    # was TEST_CF_SECRET() or something else.
+    msg "build: cmake release GCC, full config with constant flow testing"
+    scripts/config.pl full
+    scripts/config.pl set MBEDTLS_TEST_CONSTANT_FLOW_VALGRIND
+    cmake -D CMAKE_BUILD_TYPE:String=Release .
+    make
+
+    # this only shows a summary of the results (how many of each type)
+    # details are left in Testing/<date>/DynamicAnalysis.xml
+    msg "test: main suites (valgrind + constant flow)"
+    make memcheck
+}
+
 component_test_default_no_deprecated () {
     # Test that removing the deprecated features from the default
     # configuration leaves something consistent.
@@ -1244,6 +1282,16 @@ component_test_null_entropy () {
     make
 
     msg "test: MBEDTLS_TEST_NULL_ENTROPY - main suites (inc. selftests) (ASan build)"
+    make test
+}
+
+component_test_no_date_time () {
+    msg "build: default config without MBEDTLS_HAVE_TIME_DATE"
+    scripts/config.pl unset MBEDTLS_HAVE_TIME_DATE
+    CC=gcc cmake
+    make
+
+    msg "test: !MBEDTLS_HAVE_TIME_DATE - main suites"
     make test
 }
 
